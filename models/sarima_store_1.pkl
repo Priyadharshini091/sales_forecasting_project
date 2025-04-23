@@ -1,0 +1,22 @@
+from statsmodels.tsa.statespace.sarimax import SARIMAX
+
+def train_sarima(store_data):
+    model = SARIMAX(store_data['Weekly_Sales'],
+                    order=(1, 1, 1),          # (p,d,q)
+                    seasonal_order=(1, 1, 1, 12)) # (P,D,Q,s)
+    return model.fit(disp=False)
+
+# Train per-store
+sarima_models = {}
+for store in stores:
+    store_data = train[train['Store'] == store]
+    sarima_models[store] = train_sarima(store_data)
+
+# Evaluate
+sarima_preds = []
+for store in test['Store'].unique():
+    preds = sarima_models[store].predict(start=len(train), end=len(train)+len(test)-1)
+    sarima_preds.extend(preds)
+    
+test['SARIMA_Pred'] = sarima_preds
+print(f"SARIMA MAE: {mean_absolute_error(test['Weekly_Sales'], test['SARIMA_Pred']):,.0f}")
